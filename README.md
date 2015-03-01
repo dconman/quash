@@ -14,15 +14,11 @@ Requirements
 <li>Child processes inherit the environment (5)</li>
 <li>Allow background/foreground execution (&) (5)</li>
 <li>Printing/reporting of background processes, (including the jobs command) (10)</li>
-<li>Allow file redirection (> and <) (5)</li>
+<li>Allow file redirection (&gt; and &lt;) (5)</li>
 <li>Allow (1) pipe (|) (10)</li>
 <li>Supports reading commands from prompt and from file (10)</li>
 <li>Report (10)</li>
-<li>Bonus points (you can get bonus points only if you have everything else working (or
-very close to working))<ul>
+<li>Bonus points (you can get bonus points only if you have everything else working (or very close to working))<ul>
 <li>Support multiple pipes in one command. (10)</li>
-<li>kill command delivers signals to background processes. The kill command has
-the format: killSIGNUMJOBID, where SIGNUM is an integer specifying the
-signal number, and JOBID is an integer that specifies the job that should
-receive the signal. (5)</li></ul></li>
+<li>kill command delivers signals to background processes. The kill command has the format: kill SIGNUM JOBID, where SIGNUM is an integer specifying the signal number, and JOBID is an integer that specifies the job that should receive the signal. (5)</li></ul></li>
 </ol>
