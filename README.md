@@ -22,3 +22,15 @@ Requirements
 <li>Support multiple pipes in one command. (10)</li>
 <li>kill command delivers signals to background processes. The kill command has the format: kill SIGNUM JOBID, where SIGNUM is an integer specifying the signal number, and JOBID is an integer that specifies the job that should receive the signal. (5)</li></ul></li>
 </ol>
+
+<h1>To Do</h1>
+<h3>Dawson</h3>
+Parser
+<h3>Timothy</h3>
+Built in functions
+
+
+Pipe
+Execute
+Execute in Background
+Jobs array
