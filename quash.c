@@ -12,7 +12,9 @@ void parse()
     char* background;
     int num_pipes;
     int pipefd[2];
+    int pid = 0;
     command* commands;
+    command** tempCommand;
     size_t size = 1;
     
     int i;
@@ -65,40 +67,57 @@ void parse()
     temp = input;
     for (num_pipes=0; temp[num_pipes]; temp[num_pipes]=='|' ? temp[num_pipes++]=0 : *temp++);
     
-    commands = malloc(sizeof(command) * (num_pipes+1));
+    commands = malloc(sizeof(command));
+    tempCommand = &commands;
     pipefd[0] = in ? open(in, O_RDONLY) : STDIN_FILENO;
     temp = input;
     
     for(i = 0; i<=num_pipes; i++)
     {
+        (*tempCommand) = malloc(sizeof(command));
+        
+        while(temp[0] == ' ')
+        {
+            temp[0]=0;
+            temp = &temp[1];
+        }
+        
         size_t length = strcspn( temp, " \n");
-        commands[i].function = malloc( length+1 );
-        memcpy(commands[i].function, temp, length);
-        commands[i].function[length] = 0;
+        (**tempCommand).function = malloc( length+1 );
+        memcpy((**tempCommand).function, temp, length);
+        (**tempCommand).function[length] = 0;
         
         temp = &temp[length+1];
-        length = strcspn( temp, "\n");
-        commands[i].args = malloc( length+1 );
-        memcpy(commands[i].args, temp, length);
-        commands[i].args[length] = 0;
         
-        commands[i].in_src = pipefd[0];
+        while(temp[0] == ' ')
+        {
+            temp[0]=0;
+            temp = &temp[1];
+        }
+        length = strcspn( temp, "\n");
+        (**tempCommand).args = malloc( length+1 );
+        memcpy((**tempCommand).args, temp, length);
+        (**tempCommand).args[length] = 0;
+        
+        (**tempCommand).in_src = pipefd[0];
         
         if( i != num_pipes )
         {
             if( !pipe(pipefd) ) error( "pipe fail" );
-            commands[i].out_src = pipefd[1];
+            (**tempCommand).out_src = pipefd[1];
         }
         else
         {
-            printf("\n%s\n", out);
-            commands[i].out_src = out ? open( out, append, default_permission) : STDOUT_FILENO;
+            (**tempCommand).out_src = out ? open( out, append, default_permission) : STDOUT_FILENO;
         }
+        
+        (**tempCommand).done = 0;
+        tempCommand = &((**tempCommand).next);
     }
     
-    for(i = 0; i<=num_pipes; i++)
-        printf( "command: %s\narguments: %s\ninput: %d output: %d\nerrno: %d\n"
-                ,commands[i].function, commands[i].args, commands[i].in_src, commands[i].out_src, errno);
+    (**tempCommand) = NULL;
+    
+    execute( commands, background );
     
     free(input);
 }
@@ -108,5 +127,8 @@ void parse()
 int main(int argc, char** argv)
 {
     while(1)
+    {
         parse();
+        checkJobs();
+    }
 }
