@@ -5,6 +5,9 @@
  * 
  *********************************************/
 
+#ifndef definitions
+#define definitions 1
+
 #include "unistd.h"
 #include "stdio.h"
 #include "stdlib.h"
@@ -12,7 +15,16 @@
 #include <fcntl.h>
 #include "errno.h"
 
-typedef struct command {
+void error( const char* err )
+{
+    dprintf(STDERR_FILENO, "%s %d", err, errno);
+    exit(1);
+    
+}
+
+typedef struct command command;
+
+struct command {
 char*    function;   // The name/location of the function to be executed
 char*    args;       // Any arguments to the function. Can be empty
 int      in_src;     // The file descriptor for the input
@@ -26,16 +38,16 @@ command* next;       // The next command in a chain of commands
 void freeJob( command* job )
 {
     if( !job->done )
-        printf( "ERROR freeing unfinished job\n" );
+        error( "ERROR freeing unfinished job\n" );
     
     if( job->next != NULL)
         freeJob(job->next);
     
     if( job->function != NULL)
-        free(function);
+        free( job->function);
         
     if( job->args != NULL)
-        free(args);
+        free( job->args );
         
     if( job->in_src > -1)
         job->in_src = close(job->in_src) -1;
@@ -63,7 +75,8 @@ int addjob( command* new_job )
             if(num_jobs == max_jobs)
                 background_jobs = realloc(background_jobs,
                                         sizeof(command*)*(max_jobs*=2));
-                                        
+            
+            printf("[%d] %d running in background\n", i, new_job->pid );
             return i;
         }
     
@@ -73,20 +86,16 @@ void checkjobs( )
 {
     int i;
     for( i=0; i<max_jobs; i++ )
-    if( background_jobs[i].done )
+    if( background_jobs[i]->done )
     {
-        freeJob(background_jobs[i])
+        printf("[%d] %d finished %s %s\n",i, background_jobs[i]->pid,
+               background_jobs[i]->function, background_jobs[i]->args );
+        freeJob(background_jobs[i]);
         background_jobs[i]=NULL;
         num_jobs--;
     }
 }
 
+void execute( command* job, int background );
 
-void error( const char* err )
-{
-    dprintf(STDERR_FILENO, "%s", err);
-    exit(1);
-    
-}
-
-
+#endif

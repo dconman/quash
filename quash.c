@@ -1,12 +1,12 @@
-#include "definitions.h"
+#include "execute.c"
 
 
 void parse()
 {
     char* input = malloc(1);
     char* temp;
-    char* in;
-    char* out;
+    char* in = NULL;
+    char* out = NULL;
     int append = O_CREAT | O_WRONLY;
     int default_permission = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
     char* background;
@@ -14,15 +14,32 @@ void parse()
     int pipefd[2];
     int pid = 0;
     command* commands;
-    command** tempCommand;
+    command** tempCommand = &commands;
     size_t size = 1;
     
     int i;
     
     if (getline(&input, &size, stdin) == -1)
+        error( "ERROR reading input\n");
+        
+    if( background = strchr(input, '&') )
     {
-        fprintf( stdin, "ERROR reading input\n");
-        return;
+        background[0] = 0;
+        commands = malloc(sizeof(command));
+        
+        size_t length = strcspn( input, "\n");
+        commands->function = malloc( length+1 );
+        memcpy(commands->function, input, length);
+        commands->function[length] = 0;
+        
+        commands->args = NULL;
+        
+        commands->in_src = -1;
+        commands->out_src = -1;
+        
+        commands->done = 0;
+        tempCommand = &(commands->next);
+        
     }
     
     if( in = strchr(input, '<') )
@@ -48,6 +65,9 @@ void parse()
             append|=O_APPEND;
             out[0]=0;
             out = &out[1];
+        }else
+        {
+            append|=O_TRUNC;
         }
         
         while(out[0] == ' ')
@@ -59,16 +79,9 @@ void parse()
         out[strcspn(out, " \n")] = 0;
     }
     
-    if( background = strchr(input, '&') )
-    {
-        background[0] = 0;
-    }
-    
     temp = input;
     for (num_pipes=0; temp[num_pipes]; temp[num_pipes]=='|' ? temp[num_pipes++]=0 : *temp++);
     
-    commands = malloc(sizeof(command));
-    tempCommand = &commands;
     pipefd[0] = in ? open(in, O_RDONLY) : STDIN_FILENO;
     temp = input;
     
@@ -103,7 +116,7 @@ void parse()
         
         if( i != num_pipes )
         {
-            if( !pipe(pipefd) ) error( "pipe fail" );
+            if( pipe(pipefd) == -1 ) error( "pipe fail" );
             (**tempCommand).out_src = pipefd[1];
         }
         else
@@ -115,9 +128,9 @@ void parse()
         tempCommand = &((**tempCommand).next);
     }
     
-    (**tempCommand) = NULL;
+    (*tempCommand) = NULL;
     
-    execute( commands, background );
+    execute( commands, (background? 1 : 0) );
     
     free(input);
 }
@@ -129,6 +142,6 @@ int main(int argc, char** argv)
     while(1)
     {
         parse();
-        checkJobs();
+        checkjobs();
     }
 }
