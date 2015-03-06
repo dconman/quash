@@ -17,7 +17,7 @@
 
 void error( const char* err )
 {
-    dprintf(STDERR_FILENO, "%s %d", err, errno);
+    dprintf(STDERR_FILENO, "%s %d\n", err, errno);
     exit(1);
     
 }
@@ -37,8 +37,7 @@ command* next;       // The next command in a chain of commands
 
 void freeJob( command* job )
 {
-    if( !job->done )
-        error( "ERROR freeing unfinished job\n" );
+    //if( job->done == 0 ) error( "ERROR freeing unfinished job" );
     
     if( job->next != NULL)
         freeJob(job->next);

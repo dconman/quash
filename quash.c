@@ -1,5 +1,7 @@
 #include "execute.c"
 
+int std_in;
+int std_out;
 
 void parse()
 {
@@ -18,6 +20,9 @@ void parse()
     size_t size = 1;
     
     int i;
+    
+    dup2(std_in, STDIN_FILENO);
+    dup2(std_out, STDOUT_FILENO);
     
     if (getline(&input, &size, stdin) == -1)
         error( "ERROR reading input\n");
@@ -139,6 +144,8 @@ void parse()
 
 int main(int argc, char** argv)
 {
+    std_in = dup(STDIN_FILENO);
+    std_out = dup(STDOUT_FILENO);
     while(1)
     {
         parse();
