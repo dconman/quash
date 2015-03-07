@@ -1,23 +1,26 @@
-#include "definitions.h"
+#include "builtins.c"
 
 void execute_function( command* job )
 {
-    int length = strlen( job->function );
-	char* pwd = getenv("PWD");
-    char* file = malloc( length*sizeof(char) );
-    strcpy( file, job->function );
+	char* dir = getenv("PWD");
+    int length = strlen( dir );
+    char* file = malloc( (length+strlen(job->args)+1)*sizeof(char) );
+    strcpy( file, dir );
+    file[length] = '/';
+    strcpy( &(file[length+1]), job->function);
+    
+    printf( "%s\n", file);
 
     dup2(job->out_src, STDOUT_FILENO);
     dup2(job->in_src,  STDIN_FILENO);
-    if( !builtin( job ) )
-        while( execl( file, job->function, job->args, (char *) NULL ) == -1)
-        {
-            if( errno != 2 ) error( "Error Executing" );
-            
-            //Here we check the path
-            printf("Implement Path Checking!\n");
-            
-        }
+    while( 0 )//execl( file, job->function, job->args, (char *) NULL ) == -1)
+    {
+        if( errno != 2 ) error( "Error Executing" );
+        
+        //Here we check the path
+        printf("Implement Path Checking!\n");
+        
+    }
             
     job->done = 1;
 }
@@ -26,6 +29,12 @@ void execute( command* job, int background )
 {
     int pid = 0;
     command* nextJob;
+    
+    if( builtin(job) )
+    {
+        freeJob( job );
+        return;
+    }
     
     if( background )
     {

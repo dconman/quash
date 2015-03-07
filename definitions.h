@@ -14,6 +14,7 @@
 #include "string.h"
 #include <fcntl.h>
 #include "errno.h"
+#include "signal.h"
 
 void error( const char* err )
 {

@@ -1,7 +1,8 @@
+#include "definitions.h"
 
 void set(command* job)
 {
-	int length = strcspn(job->args, '=');
+	int length = strspn(job->args, "=");
 	
 	if(length == 0)
 		return;
@@ -9,7 +10,7 @@ void set(command* job)
 	char* envname = malloc(length * sizeof(char));
 	memcpy(envname, job->args, length);
 	
-	if(strchar(job->args, '=') == 0)
+	if(strchr(job->args, '=') == 0)
 	{
 		printf("%s = %s\n", envname, getenv(envname));
 		free(envname);
@@ -43,6 +44,9 @@ void cd(command* job)
 				error("error with cd");
 		}
 	}
+    
+    setenv( "PWD", realpath( job->args, 0 ), 1 );
+    printf( "%s\n", getenv("PWD"));
 }
 
 void quit(command* job)
