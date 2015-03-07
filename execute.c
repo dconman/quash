@@ -3,12 +3,13 @@
 void execute_function( command* job )
 {
     int length = strlen( job->function );
+	char* pwd = getenv("PWD");
     char* file = malloc( length*sizeof(char) );
     strcpy( file, job->function );
 
     dup2(job->out_src, STDOUT_FILENO);
     dup2(job->in_src,  STDIN_FILENO);
-    //if( !builtin( job ) )
+    if( !builtin( job ) )
         while( execl( file, job->function, job->args, (char *) NULL ) == -1)
         {
             if( errno != 2 ) error( "Error Executing" );
