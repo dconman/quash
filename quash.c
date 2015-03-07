@@ -24,7 +24,12 @@ void parse()
 
     
     if (getline(&input, &size, stdin) == -1)
-        error( "ERROR reading input\n");
+        if(errno == 0) exit(0);
+        else error( "ERROR reading input\n");
+        
+    if(strcmp( input, "\n") == 0) return;
+        
+    if (size == 0) return;
         
     if( background = strchr(input, '&') )
     {
@@ -46,8 +51,9 @@ void parse()
         tempCommand = &(commands->next);
         
     }
-    
-    if( in = strchr(input, '<') )
+    in = strchr(input, '<');
+    out = strchr(input, '>');
+    if( in )
     {
         in[0] = 0;
         in = &in[1];
@@ -61,7 +67,7 @@ void parse()
         in[strcspn(in, " \n")] = 0;
         
     }
-    if( out = strchr(input, '>') )
+    if( out )
     {
         out[0] = 0;
         out = &out[1];
@@ -191,7 +197,6 @@ int main(int argc, char** argv)
     {
         dup2(std_in, STDIN_FILENO);
         dup2(std_out, STDOUT_FILENO);
-        printf( "> ");
         parse();    
         dup2(std_in, STDIN_FILENO);
         dup2(std_out, STDOUT_FILENO);
