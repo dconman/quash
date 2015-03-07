@@ -31,14 +31,12 @@ char*    args;       // Any arguments to the function. Can be empty
 int      in_src;     // The file descriptor for the input
 int      out_src;    // The file descriptor for the output
 int      pid;        // The pid if this is a background process
-int      done;       // If the job is a background process and has terminated
 command* next;       // The next command in a chain of commands
 };
 
 
 void freeJob( command* job )
 {
-    //if( job->done == 0 ) error( "ERROR freeing unfinished job" );
     
     if( job->next != NULL)
         freeJob(job->next);
@@ -68,7 +66,7 @@ int addjob( command* new_job )
 {
     int i;
     for( i=0; i<max_jobs; i++ )
-        if(background_jobs[i] = NULL)
+        if(background_jobs[i] == NULL)
         {
             background_jobs[i] = new_job;
             num_jobs++;
@@ -76,7 +74,7 @@ int addjob( command* new_job )
                 background_jobs = realloc(background_jobs,
                                         sizeof(command*)*(max_jobs*=2));
             
-            printf("[%d] %d running in background\n", i, new_job->pid );
+            dprintf( 0, "[%d] %d running in background\n", i, new_job->pid );
             return i;
         }
     
@@ -86,8 +84,12 @@ void checkjobs( )
 {
     int i;
     for( i=0; i<max_jobs; i++ )
-    if( background_jobs[i]->done )
+    if( background_jobs[i] != NULL )
     {
+        int status;
+        waitpid( background_jobs[i]->pid, &status, WNOHANG);
+        if ( !WIFEXITED(status) && ! WIFSIGNALED(status)) continue;
+        if( errno != ESRCH ) continue;
         printf("[%d] %d finished %s %s\n",i, background_jobs[i]->pid,
                background_jobs[i]->function, background_jobs[i]->args );
         freeJob(background_jobs[i]);

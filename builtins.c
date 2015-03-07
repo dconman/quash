@@ -2,7 +2,7 @@
 
 void set(command* job)
 {
-	int length = strspn(job->args, "=");
+	int length = strcspn(job->args, "=");
 	
 	if(length == 0)
 		return;

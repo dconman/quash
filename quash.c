@@ -20,9 +20,7 @@ void parse()
     size_t size = 1;
     
     int i;
-    
-    dup2(std_in, STDIN_FILENO);
-    dup2(std_out, STDOUT_FILENO);
+
     
     if (getline(&input, &size, stdin) == -1)
         error( "ERROR reading input\n");
@@ -30,6 +28,8 @@ void parse()
     if( background = strchr(input, '&') )
     {
         background[0] = 0;
+        while((--background)[0] == ' ')
+            background[0] = 0;
         commands = malloc(sizeof(command));
         
         size_t length = strcspn( input, "\n");
@@ -42,7 +42,6 @@ void parse()
         commands->in_src = -1;
         commands->out_src = -1;
         
-        commands->done = 0;
         tempCommand = &(commands->next);
         
     }
@@ -129,7 +128,6 @@ void parse()
             (**tempCommand).out_src = out ? open( out, append, default_permission) : STDOUT_FILENO;
         }
         
-        (**tempCommand).done = 0;
         tempCommand = &((**tempCommand).next);
     }
     
@@ -146,9 +144,17 @@ int main(int argc, char** argv)
 {
     std_in = dup(STDIN_FILENO);
     std_out = dup(STDOUT_FILENO);
+    
+    max_jobs = 10;
+    background_jobs = malloc(max_jobs*sizeof(command*));
+    
     while(1)
     {
-        parse();
+        dup2(std_in, STDIN_FILENO);
+        dup2(std_out, STDOUT_FILENO);
+        parse();    
+        dup2(std_in, STDIN_FILENO);
+        dup2(std_out, STDOUT_FILENO);
         checkjobs();
     }
 }

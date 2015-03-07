@@ -2,27 +2,47 @@
 
 void execute_function( command* job )
 {
-	char* dir = getenv("PWD");
-    int length = strlen( dir );
-    char* file = malloc( (length+strlen(job->args)+1)*sizeof(char) );
-    strcpy( file, dir );
-    file[length] = '/';
-    strcpy( &(file[length+1]), job->function);
-    
-    printf( "%s\n", file);
-
     dup2(job->out_src, STDOUT_FILENO);
     dup2(job->in_src,  STDIN_FILENO);
-    while( 0 )//execl( file, job->function, job->args, (char *) NULL ) == -1)
+    
+	char* dir = getenv("PWD");
+    char* path = getenv( "PATH" );
+    int length = strlen(job->function);
+    char* file = malloc((length)*sizeof(char) );
+    strcpy( file, job->function );
+    if( execl( file, job->function, job->args, (char *) NULL ) != -1 )
     {
-        if( errno != 2 ) error( "Error Executing" );
-        
-        //Here we check the path
-        printf("Implement Path Checking!\n");
-        
+        free(file);
+        return;
     }
-            
-    job->done = 1;
+    if( errno != 2 ) error( "Error Executing" );
+    
+    
+    file = realloc(file, (length+strlen(dir)+1)*sizeof(char));
+    
+    strcpy( file, dir );
+    file[strlen( dir )] = '/';
+    strcpy( &(file[strlen(dir)+1]), job->function);
+    
+
+    while( execl( file, job->function, job->args, (char *) NULL ) == -1)
+    {
+        if( errno != 2 || path[0] == 0 ) error( "Error Executing" );
+        
+        int pos = strcspn(path, ":");
+
+        free(file);
+        file = malloc((length + pos)*sizeof(char));
+        
+        memcpy(file, path, pos);
+        file[pos]='/';
+        strcpy(&(file[pos+1]), job->function);
+        path = &(path[pos]);
+        if(path[0] == ':') path = &(path[1]);
+          
+    }
+    
+    free(file);
 }
 
 void execute( command* job, int background )
@@ -44,8 +64,8 @@ void execute( command* job, int background )
         {
             job->pid = pid;
             addjob( job );
-            job = job->next;
         }
+        job = job->next;
     }
     
     if( pid == 0)
@@ -57,7 +77,6 @@ void execute( command* job, int background )
             if( pid == 0 )
             {
                 execute_function( job );
-                job->done = 1;
                 exit(0);
             } else
             {
@@ -78,8 +97,10 @@ void execute( command* job, int background )
         }
         
         
-        if(background) exit(0);
-        else freeJob( job );
+        if(background)
+            exit(0);
+        else
+            freeJob( job );
     }
     
     
