@@ -8,41 +8,34 @@ void execute_function( command* job )
 	char* dir = getenv("PWD");
     char* path = getenv( "PATH" );
     int length = strlen(job->function);
-    char* file = malloc((length)*sizeof(char) );
-    strcpy( file, job->function );
-    if( execl( file, job->function, job->args, (char *) NULL ) != -1 )
+    char* function = malloc(length*sizeof(char));
+    strcpy(function, job->function);
+    char* file = realpath( function, NULL );
+    while( file == NULL )
     {
-        free(file);
-        return;
-    }
-    if( errno != 2 ) error( "Error Executing" );
-    
-    
-    file = realloc(file, (length+strlen(dir)+1)*sizeof(char));
-    
-    strcpy( file, dir );
-    file[strlen( dir )] = '/';
-    strcpy( &(file[strlen(dir)+1]), job->function);
-    
-
-    while( execl( file, job->function, job->args, (char *) NULL ) == -1)
-    {
-        if( errno != 2 || path[0] == 0 ) error( "Error Executing" );
+        free(function);
+        
+        if (path[0]==0)
+        {
+            printf( "Command not found\n" );
+            return;
+        }
         
         int pos = strcspn(path, ":");
-
-        free(file);
         file = malloc((length + pos)*sizeof(char));
-        
-        memcpy(file, path, pos);
-        file[pos]='/';
-        strcpy(&(file[pos+1]), job->function);
+        memcpy(function, path, pos);
+        function[pos]='/';
+        strcpy(&(function[pos+1]), job->function);
         path = &(path[pos]);
         if(path[0] == ':') path = &(path[1]);
-          
+        
+        file = realpath( function, NULL);
     }
-    
+    if( execv( file, job->args ) == -1 )
+        if( errno != 2 ) error( "Error Executing" );
+        
     free(file);
+
 }
 
 void execute( command* job, int background )
@@ -76,7 +69,7 @@ void execute( command* job, int background )
             pid = fork();
             if( pid == 0 )
             {
-                execute_function( job );
+                execute_function( nextJob );
                 exit(0);
             } else
             {

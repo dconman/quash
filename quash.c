@@ -12,14 +12,15 @@ void parse()
     int append = O_CREAT | O_WRONLY;
     int default_permission = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH;
     char* background;
+    int num_args;
+    char** args;
     int num_pipes;
     int pipefd[2];
-    int pid = 0;
     command* commands;
     command** tempCommand = &commands;
     size_t size = 1;
     
-    int i;
+    int i,j;
 
     
     if (getline(&input, &size, stdin) == -1)
@@ -85,6 +86,7 @@ void parse()
     
     temp = input;
     for (num_pipes=0; temp[num_pipes]; temp[num_pipes]=='|' ? temp[num_pipes++]=0 : *temp++);
+
     
     pipefd[0] = in ? open(in, O_RDONLY) : STDIN_FILENO;
     temp = input;
@@ -92,6 +94,14 @@ void parse()
     for(i = 0; i<=num_pipes; i++)
     {
         (*tempCommand) = malloc(sizeof(command));
+        
+        num_args=1;
+        for (j=0; temp[j]; j++)
+            if (temp[j]==' ')
+                num_args++;
+        
+        args = malloc((num_args+1) * sizeof(char*));
+
         
         while(temp[0] == ' ')
         {
@@ -104,17 +114,43 @@ void parse()
         memcpy((**tempCommand).function, temp, length);
         (**tempCommand).function[length] = 0;
         
+        args[0] = malloc( length+1 );
+        memcpy(args[0], temp, length);
+        args[0][length] = 0;
+        
         temp = &temp[length+1];
         
         while(temp[0] == ' ')
+            {
+                temp[0]=0;
+                temp = &temp[1];
+            }
+            length = strcspn( temp, " \n");
+        
+        for( j=1; length > 0 && j < num_args; j++ )
         {
-            temp[0]=0;
-            temp = &temp[1];
+        
+            
+            args[j] = malloc( length+1 );
+            memcpy(args[j], temp, length);
+            args[j][length] = 0;
+            
+            temp = &temp[length+1];
+            
+            while(temp[0] == ' ')
+            {
+                temp[0]=0;
+                temp = &temp[1];
+            }
+            length = strcspn( temp, " \n");
+            
         }
-        length = strcspn( temp, "\n");
-        (**tempCommand).args = malloc( length+1 );
-        memcpy((**tempCommand).args, temp, length);
-        (**tempCommand).args[length] = 0;
+        
+        args[j++] = NULL;
+        
+        (**tempCommand).args = malloc(j*sizeof(char*));
+        
+        memcpy((**tempCommand).args, args, j*sizeof(char*));
         
         (**tempCommand).in_src = pipefd[0];
         
@@ -127,14 +163,16 @@ void parse()
         {
             (**tempCommand).out_src = out ? open( out, append, default_permission) : STDOUT_FILENO;
         }
-        
+            
+        temp = &(temp[1]);
         tempCommand = &((**tempCommand).next);
+        free(args);
     }
+
     
     (*tempCommand) = NULL;
     
     execute( commands, (background? 1 : 0) );
-    
     free(input);
 }
 
@@ -145,13 +183,15 @@ int main(int argc, char** argv)
     std_in = dup(STDIN_FILENO);
     std_out = dup(STDOUT_FILENO);
     
-    max_jobs = 10;
+    max_jobs = 11;
     background_jobs = malloc(max_jobs*sizeof(command*));
+
     
     while(1)
     {
         dup2(std_in, STDIN_FILENO);
         dup2(std_out, STDOUT_FILENO);
+        printf( "> ");
         parse();    
         dup2(std_in, STDIN_FILENO);
         dup2(std_out, STDOUT_FILENO);

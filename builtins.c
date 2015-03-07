@@ -2,23 +2,25 @@
 
 void set(command* job)
 {
-	int length = strcspn(job->args, "=");
+    if(job->args[1] == NULL) error("ERROR invalid number of args");
+    
+	int length = strcspn(job->args[1], "=");
 	
 	if(length == 0)
 		return;
 	
 	char* envname = malloc(length * sizeof(char));
-	memcpy(envname, job->args, length);
+	memcpy(envname, job->args[1], length);
 	
-	if(strchr(job->args, '=') == 0)
+	if(strchr(job->args[1], '=') == 0)
 	{
 		printf("%s = %s\n", envname, getenv(envname));
 		free(envname);
 		return;
 	}
 	
-	char* envval = malloc((strlen(job->args)-length) * sizeof(char));
-	strcpy(envval, &(job->args[length+1]));
+	char* envval = malloc((strlen(job->args[1])-length) * sizeof(char));
+	strcpy(envval, &(job->args[1][length+1]));
 	
 	if(setenv(envname, envval, 1) == -1) error("error setting");
 	free(envname);
@@ -27,26 +29,29 @@ void set(command* job)
 
 void cd(command* job)
 {
-	if(chdir(job->args) == -1)
+    char* newDir = realpath( (job->args[1] ? job->args[1] : getenv( "HOME" )), NULL);
+    
+	if(chdir(newDir) == -1)
 	{
 		switch(errno)
 		{
 			case ENOENT: 
-				printf("File does not exist");
+				printf("File does not exist\n");
 				break;
 			case EACCES:
-				printf("Permission was denied");
+				printf("Permission was denied\n");
 				break;
 			case ENAMETOOLONG:
-				printf("Path is too long");
+				printf("Path is too long\n");
 				break;
 			default:
-				error("error with cd");
+				error("error with cd\n");
 		}
 	}
     
-    setenv( "PWD", realpath( job->args, 0 ), 1 );
+    setenv( "PWD", newDir, 1 );
     printf( "%s\n", getenv("PWD"));
+    free(newDir);
 }
 
 void quit(command* job)
