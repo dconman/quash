@@ -2,6 +2,7 @@
 EECS 678 QUASH 
 Dawson Conway
 Timothy Frese
+A tiny bit of help from Christopher Rooney
 
 Requirements
 <ol>
