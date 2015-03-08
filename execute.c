@@ -41,7 +41,7 @@ void execute_function( command* job )
         
         // set function to the next path / the job function
         int pos = strcspn(path, ":"); // The length of this path variable
-        function = malloc((length + pos)*sizeof(char));
+        function = malloc((length + pos + 2)*sizeof(char));
         memcpy(function, path, pos);
         function[pos]='/';
         strcpy(&(function[pos+1]), job->function);
@@ -54,6 +54,7 @@ void execute_function( command* job )
         if( errno != 2 ) error( "Error Executing" );
         
     free(file);
+    free(function);
 
 }
 
