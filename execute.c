@@ -6,6 +6,7 @@
  *********************************************/
  
  #include "builtins.c"
+
  
  /*********************************************
  * execute_function( command* job )
@@ -21,9 +22,10 @@ void execute_function( command* job )
     
 	char* dir = getenv("PWD"); // Current directory
     char* path = getenv( "PATH" ); // Variables in PATH
-    int length = strlen(job->function); // Function length
+    int length = strlen(job->function)+1; // Function length and null char
     char* function = malloc(length*sizeof(char)); // Function to execute
     strcpy(function, job->function);
+    
     char* file                       // Full path to function
         = realpath( function, NULL ); //Check if function is absolute or relative
     while( file == NULL ) // Function was not where we looked for it
@@ -41,7 +43,7 @@ void execute_function( command* job )
         
         // set function to the next path / the job function
         int pos = strcspn(path, ":"); // The length of this path variable
-        function = malloc((length + pos + 2)*sizeof(char));
+        function = malloc((length + pos + 1)*sizeof(char)); //path length, '/', and function length.
         memcpy(function, path, pos);
         function[pos]='/';
         strcpy(&(function[pos+1]), job->function);
